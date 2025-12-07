@@ -30,12 +30,51 @@
             font-size: 2.5rem;
         }
 
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+        }
+
+        .tab-button:not(.active) {
+            background: #334155;
+            color: #94a3b8;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #475569;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Visualisation : Threads et Sémaphores</h1>
 
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('threads')">Threads (pthread)</button>
+            <button class="tab-button" onclick="switchTab('semaphores')">Sémaphores (sem)</button>
+        </div>
     </div>
 
 </body>
