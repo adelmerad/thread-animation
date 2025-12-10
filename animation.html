@@ -62,6 +62,79 @@
             background: #475569;
         }
 
+        .animation-area {
+            background: #1e293b;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #334155;
+            min-height: 400px;
+        }
+
+        .thread-container {
+            margin-bottom: 2rem;
+        }
+
+        .thread-label {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .thread-name {
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .thread-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .status-running { background: #10b981; }
+        .status-idle { background: #64748b; }
+        .status-creating { background: #f59e0b; }
+        .status-finished { background: #6b7280; }
+
+        .progress-bar {
+            position: relative;
+            height: 3rem;
+            background: #334155;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            height: 100%;
+            transition: width 1s ease-in-out;
+        }
+
+        .progress-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 2rem;
+            height: 2rem;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: left 1s ease-in-out;
+        }
+
+        .progress-indicator-dot {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
         .hidden {
             display: none;
         }
@@ -74,6 +147,38 @@
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('threads')">Threads (pthread)</button>
             <button class="tab-button" onclick="switchTab('semaphores')">Sémaphores (sem)</button>
+        </div>
+
+        <div class="animation-area">
+            <!-- THREADS TAB -->
+            <div id="threads-content">
+                <div class="thread-container">
+                    <div class="thread-label">
+                        <span class="thread-name">Thread Principal</span>
+                        <span class="thread-status status-running" id="main-status">En cours</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="background: #3b82f6; width: 0%;" id="main-progress"></div>
+                        <div class="progress-indicator" style="left: 0%;" id="main-indicator">
+                            <div class="progress-indicator-dot" style="background: #3b82f6;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thread-container">
+                    <div class="thread-label">
+                        <span class="thread-name">Thread Créé</span>
+                        <span class="thread-status status-idle" id="child-status">Inactif</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="background: #22c55e; width: 0%;" id="child-progress"></div>
+                        <div class="progress-indicator hidden" style="left: 0%;" id="child-indicator">
+                            <div class="progress-indicator-dot" style="background: #22c55e;"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
