@@ -171,6 +171,26 @@
         .stack-1 { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd; }
         .stack-2 { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #86efac; }
 
+        .description-box {
+            background: #334155;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #475569;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: #6366f1;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
         .hidden {
             display: none;
         }
@@ -229,7 +249,70 @@
                 </div>
             </div>
         </div>
+
+        <div class="description-box">
+            <span class="step-number" id="step-number">1</span>
+            <span id="step-description">Le thread principal démarre</span>
+        </div>
     </div>
 
+    <script>
+        let currentTab = 'threads';
+        let currentStep = 0;
+        let isPlaying = false;
+        let playInterval = null;
+
+        const threadSteps = [
+            { desc: 'Le thread principal démarre', mainPos: 20, childPos: 0, childStatus: 'idle', childVisible: false },
+            { desc: 'pthread_create() est appelé', mainPos: 40, childPos: 0, childStatus: 'creating', childVisible: true },
+            { desc: 'Le nouveau thread est créé et s\'exécute en parallèle', mainPos: 60, childPos: 30, childStatus: 'running', childVisible: true },
+            { desc: 'Les deux threads s\'exécutent simultanément', mainPos: 80, childPos: 60, childStatus: 'running', childVisible: true },
+            { desc: 'pthread_join() - Le thread principal attend', mainPos: 80, childPos: 90, childStatus: 'running', childVisible: true },
+            { desc: 'Le thread créé termine avec pthread_exit()', mainPos: 80, childPos: 100, childStatus: 'finished', childVisible: true },
+            { desc: 'Le thread principal reprend après pthread_join()', mainPos: 100, childPos: 100, childStatus: 'finished', childVisible: true }
+        ];
+
+        function updateDisplay() {
+            document.getElementById('step-number').textContent = currentStep + 1;
+            
+            if (currentTab === 'threads') {
+                const step = threadSteps[currentStep];
+                document.getElementById('step-description').textContent = step.desc;
+                
+                document.getElementById('main-progress').style.width = step.mainPos + '%';
+                document.getElementById('main-indicator').style.left = step.mainPos + '%';
+                
+                document.getElementById('child-progress').style.width = step.childPos + '%';
+                document.getElementById('child-indicator').style.left = step.childPos + '%';
+                
+                const childIndicator = document.getElementById('child-indicator');
+                if (step.childVisible) {
+                    childIndicator.classList.remove('hidden');
+                } else {
+                    childIndicator.classList.add('hidden');
+                }
+                
+                const childStatus = document.getElementById('child-status');
+                childStatus.className = 'thread-status';
+                
+                if (step.childStatus === 'running') {
+                    childStatus.classList.add('status-running');
+                    childStatus.textContent = 'En cours';
+                } else if (step.childStatus === 'creating') {
+                    childStatus.classList.add('status-creating');
+                    childStatus.textContent = 'Création...';
+                } else if (step.childStatus === 'finished') {
+                    childStatus.classList.add('status-finished');
+                    childStatus.textContent = 'Terminé';
+                } else {
+                    childStatus.classList.add('status-idle');
+                    childStatus.textContent = 'Inactif';
+                }
+            }
+        }
+
+        // Initialize
+        updateDisplay();
+    </script>
 </body>
 </html>
