@@ -171,6 +171,81 @@
         .stack-1 { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd; }
         .stack-2 { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #86efac; }
 
+        .semaphore-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .semaphore-circle {
+            width: 8rem;
+            height: 8rem;
+            margin: 1rem auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            border: 4px solid;
+            transition: all 0.5s;
+        }
+
+        .semaphore-available {
+            background: #10b981;
+            border-color: #34d399;
+        }
+
+        .semaphore-locked {
+            background: #ef4444;
+            border-color: #f87171;
+        }
+
+        .critical-section {
+            background: rgba(234, 179, 8, 0.2);
+            border: 2px solid #eab308;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            min-height: 8rem;
+            margin-bottom: 2rem;
+        }
+
+        .critical-section h3 {
+            color: #fbbf24;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .thread-in-critical {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .thread-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .thread-card {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid;
+            transition: all 0.3s;
+        }
+
+        .thread-card.waiting { background: #334155; border-color: #64748b; }
+        .thread-card.blocked { background: #7f1d1d; border-color: #ef4444; }
+        .thread-card.in-critical { background: #1e3a8a; border-color: #3b82f6; transform: scale(1.05); }
+        .thread-card.finished { background: #1f2937; border-color: #6b7280; }
+
         .description-box {
             background: #334155;
             padding: 1.5rem;
@@ -244,6 +319,37 @@
                         <div>
                             <div class="stack-block stack-1" style="margin-bottom: 0.5rem;">Stack Thread 1</div>
                             <div class="stack-block stack-2">Stack Thread 2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEMAPHORES TAB -->
+            <div id="semaphores-content" class="hidden">
+                <div class="semaphore-display">
+                    <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">Sémaphore</div>
+                    <div class="semaphore-circle semaphore-available" id="semaphore-circle">1</div>
+                    <div style="color: #94a3b8;" id="semaphore-label">Disponible</div>
+                </div>
+
+                <div class="critical-section">
+                    <h3>Section Critique (Ressource Partagée)</h3>
+                    <div id="critical-content" style="text-align: center; color: #94a3b8; font-style: italic;">
+                        Aucun thread en accès
+                    </div>
+                </div>
+
+                <div class="thread-grid">
+                    <div class="thread-card waiting" id="thread1-card">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 1</div>
+                        <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread1-label">
+                            En attente
+                        </div>
+                    </div>
+                    <div class="thread-card waiting" id="thread2-card">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 2</div>
+                        <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread2-label">
+                            En attente
                         </div>
                     </div>
                 </div>
