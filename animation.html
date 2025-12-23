@@ -378,6 +378,31 @@
             { desc: 'Le thread principal reprend après pthread_join()', mainPos: 100, childPos: 100, childStatus: 'finished', childVisible: true }
         ];
 
+        const semaphoreSteps = [
+            { desc: 'sem_init(&sem, 0, 1) - Sémaphore initialisé à 1', semValue: 1, thread1: 'waiting', thread2: 'waiting', inCritical: null },
+            { desc: 'Thread 1 appelle sem_wait() - Sémaphore décrémenté à 0', semValue: 0, thread1: 'in_critical', thread2: 'waiting', inCritical: 1 },
+            { desc: 'Thread 2 appelle sem_wait() - Bloqué car sémaphore = 0', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 dans la section critique', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 appelle sem_post() - Sémaphore incrémenté à 1', semValue: 1, thread1: 'finished', thread2: 'blocked', inCritical: null },
+            { desc: 'Thread 2 est débloqué et entre en section critique', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
+            { desc: 'Thread 2 appelle sem_post() - Libère le sémaphore', semValue: 1, thread1: 'finished', thread2: 'finished', inCritical: null }
+        ];
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'threads') {
+                document.getElementById('threads-content').classList.remove('hidden');
+                document.getElementById('semaphores-content').classList.add('hidden');
+            } else {
+                document.getElementById('threads-content').classList.add('hidden');
+                document.getElementById('semaphores-content').classList.remove('hidden');
+            }
+        }
+
         function updateDisplay() {
             document.getElementById('step-number').textContent = currentStep + 1;
             
@@ -414,7 +439,49 @@
                     childStatus.classList.add('status-idle');
                     childStatus.textContent = 'Inactif';
                 }
+            } else {
+                const step = semaphoreSteps[currentStep];
+                document.getElementById('step-description').textContent = step.desc;
+                
+                const semCircle = document.getElementById('semaphore-circle');
+                semCircle.textContent = step.semValue;
+                semCircle.className = 'semaphore-circle ' + (step.semValue > 0 ? 'semaphore-available' : 'semaphore-locked');
+                document.getElementById('semaphore-label').textContent = step.semValue > 0 ? 'Disponible' : 'Verrouillé';
+                
+                const criticalContent = document.getElementById('critical-content');
+                if (step.inCritical) {
+                    criticalContent.innerHTML = `<div class="thread-in-critical" style="background: ${step.inCritical === 1 ? '#3b82f6' : '#a855f7'};">Thread ${step.inCritical} à l'intérieur</div>`;
+                } else {
+                    criticalContent.innerHTML = '<div style="text-align: center; color: #94a3b8; font-style: italic;">Aucun thread en accès</div>';
+                }
+                
+                updateThreadCard('thread1', step.thread1);
+                updateThreadCard('thread2', step.thread2);
             }
+        }
+
+        function updateThreadCard(threadId, status) {
+            const card = document.getElementById(threadId + '-card');
+            const label = document.getElementById(threadId + '-label');
+            
+            card.className = 'thread-card ' + status;
+            
+            const statusLabels = {
+                'waiting': 'En attente',
+                'blocked': 'Bloqué (wait)',
+                'in_critical': 'En section critique',
+                'finished': 'Terminé'
+            };
+            
+            const statusColors = {
+                'waiting': '#475569',
+                'blocked': '#ef4444',
+                'in_critical': threadId === 'thread1' ? '#3b82f6' : '#a855f7',
+                'finished': '#6b7280'
+            };
+            
+            label.textContent = statusLabels[status];
+            label.style.background = statusColors[status];
         }
 
         // Initialize
