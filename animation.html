@@ -266,6 +266,41 @@
             margin-right: 1rem;
         }
 
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .control-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-button.primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .control-button.secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .control-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
         .hidden {
             display: none;
         }
@@ -360,6 +395,21 @@
             <span class="step-number" id="step-number">1</span>
             <span id="step-description">Le thread principal démarre</span>
         </div>
+
+        <div class="controls">
+            <button class="control-button primary" onclick="togglePlay()">
+                <span id="play-icon">▶</span>
+                <span id="play-text">Lecture</span>
+            </button>
+            <button class="control-button secondary" onclick="nextStep()">
+                <span>▶▶</span>
+                <span>Suivant</span>
+            </button>
+            <button class="control-button secondary" onclick="reset()">
+                <span>↻</span>
+                <span>Recommencer</span>
+            </button>
+        </div>
     </div>
 
     <script>
@@ -390,6 +440,7 @@
 
         function switchTab(tab) {
             currentTab = tab;
+            reset();
             
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
@@ -482,6 +533,41 @@
             
             label.textContent = statusLabels[status];
             label.style.background = statusColors[status];
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
+            document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Lecture';
+            
+            if (isPlaying) {
+                playInterval = setInterval(() => {
+                    nextStep();
+                    const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
+                    if (currentStep >= maxSteps - 1) {
+                        togglePlay();
+                    }
+                }, 2000);
+            } else {
+                clearInterval(playInterval);
+            }
+        }
+
+        function nextStep() {
+            const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
+            if (currentStep < maxSteps - 1) {
+                currentStep++;
+                updateDisplay();
+            }
+        }
+
+        function reset() {
+            currentStep = 0;
+            isPlaying = false;
+            clearInterval(playInterval);
+            document.getElementById('play-icon').textContent = '▶';
+            document.getElementById('play-text').textContent = 'Lecture';
+            updateDisplay();
         }
 
         // Initialize
