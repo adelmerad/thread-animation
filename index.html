@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualisation : Threads et Sémaphores</title>
+    <title>Threads and Semaphores Visualizer</title>
     <style>
         * {
             margin: 0;
@@ -334,11 +334,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Visualisation : Threads et Sémaphores</h1>
+        <h1>Threads and Semaphores Visualizer</h1>
 
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('threads')">Threads (pthread)</button>
-            <button class="tab-button" onclick="switchTab('semaphores')">Sémaphores (sem)</button>
+            <button class="tab-button" onclick="switchTab('semaphores')">Semaphores (sem)</button>
         </div>
 
         <div class="animation-area">
@@ -346,8 +346,8 @@
             <div id="threads-content">
                 <div class="thread-container">
                     <div class="thread-label">
-                        <span class="thread-name">Thread Principal</span>
-                        <span class="thread-status status-running" id="main-status">En cours</span>
+                        <span class="thread-name">Main Thread</span>
+                        <span class="thread-status status-running" id="main-status">Running</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="background: #3b82f6; width: 0%;" id="main-progress"></div>
@@ -359,8 +359,8 @@
 
                 <div class="thread-container">
                     <div class="thread-label">
-                        <span class="thread-name">Thread Créé</span>
-                        <span class="thread-status status-idle" id="child-status">Inactif</span>
+                        <span class="thread-name">Created Thread</span>
+                        <span class="thread-status status-idle" id="child-status">Idle</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="background: #22c55e; width: 0%;" id="child-progress"></div>
@@ -371,11 +371,11 @@
                 </div>
 
                 <div class="memory-section">
-                    <h3>Mémoire Partagée</h3>
+                    <h3>Shared Memory</h3>
                     <div class="memory-grid">
                         <div class="memory-block heap-block">
-                            <div style="font-weight: bold; margin-bottom: 0.5rem;">Heap (partagé)</div>
-                            <div style="font-size: 0.875rem;">Variables globales</div>
+                            <div style="font-weight: bold; margin-bottom: 0.5rem;">Heap (shared)</div>
+                            <div style="font-size: 0.875rem;">Global variables</div>
                         </div>
                         <div>
                             <div class="stack-block stack-1" style="margin-bottom: 0.5rem;">Stack Thread 1</div>
@@ -388,15 +388,15 @@
             <!-- SEMAPHORES TAB -->
             <div id="semaphores-content" class="hidden">
                 <div class="semaphore-display">
-                    <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">Sémaphore</div>
+                    <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">Semaphore</div>
                     <div class="semaphore-circle semaphore-available" id="semaphore-circle">1</div>
-                    <div style="color: #94a3b8;" id="semaphore-label">Disponible</div>
+                    <div style="color: #94a3b8;" id="semaphore-label">Available</div>
                 </div>
 
                 <div class="critical-section">
-                    <h3>Section Critique (Ressource Partagée)</h3>
+                    <h3>Critical Section (Shared Resource)</h3>
                     <div id="critical-content" style="text-align: center; color: #94a3b8; font-style: italic;">
-                        Aucun thread en accès
+                        No thread inside
                     </div>
                 </div>
 
@@ -404,13 +404,13 @@
                     <div class="thread-card waiting" id="thread1-card">
                         <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 1</div>
                         <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread1-label">
-                            En attente
+                            Waiting
                         </div>
                     </div>
                     <div class="thread-card waiting" id="thread2-card">
                         <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 2</div>
                         <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread2-label">
-                            En attente
+                            Waiting
                         </div>
                     </div>
                 </div>
@@ -419,38 +419,38 @@
 
         <div class="description-box">
             <span class="step-number" id="step-number">1</span>
-            <span id="step-description">Le thread principal démarre</span>
+            <span id="step-description">The main thread starts</span>
         </div>
 
         <div class="controls">
             <button class="control-button primary" onclick="togglePlay()">
                 <span id="play-icon">▶</span>
-                <span id="play-text">Lecture</span>
+                <span id="play-text">Play</span>
             </button>
             <button class="control-button secondary" onclick="nextStep()">
                 <span>▶▶</span>
-                <span>Suivant</span>
+                <span>Next</span>
             </button>
             <button class="control-button secondary" onclick="reset()">
                 <span>↻</span>
-                <span>Recommencer</span>
+                <span>Restart</span>
             </button>
         </div>
 
         <div class="legend">
-            <h3>Concepts clés :</h3>
+            <h3>Key concepts:</h3>
             <div class="legend-grid" id="legend-content">
                 <div class="legend-item">
-                    <strong style="color: #60a5fa;">pthread_create() :</strong> Crée un nouveau thread qui s'exécute en parallèle
+                    <strong style="color: #60a5fa;">pthread_create():</strong> Creates a new thread that runs in parallel
                 </div>
                 <div class="legend-item">
-                    <strong style="color: #4ade80;">pthread_join() :</strong> Attend la fin d'un thread (comme wait() pour les processus)
+                    <strong style="color: #4ade80;">pthread_join():</strong> Waits for a thread to finish (like wait() for processes)
                 </div>
                 <div class="legend-item">
-                    <strong style="color: #fbbf24;">Mémoire partagée :</strong> Heap commun entre threads
+                    <strong style="color: #fbbf24;">Shared memory:</strong> Threads share the same heap
                 </div>
                 <div class="legend-item">
-                    <strong style="color: #c084fc;">pthread_exit() :</strong> Termine un thread proprement
+                    <strong style="color: #c084fc;">pthread_exit():</strong> Ends a thread cleanly
                 </div>
             </div>
         </div>
@@ -463,23 +463,23 @@
         let playInterval = null;
 
         const threadSteps = [
-            { desc: 'Le thread principal démarre', mainPos: 20, childPos: 0, childStatus: 'idle', childVisible: false },
-            { desc: 'pthread_create() est appelé', mainPos: 40, childPos: 0, childStatus: 'creating', childVisible: true },
-            { desc: 'Le nouveau thread est créé et s\'exécute en parallèle', mainPos: 60, childPos: 30, childStatus: 'running', childVisible: true },
-            { desc: 'Les deux threads s\'exécutent simultanément', mainPos: 80, childPos: 60, childStatus: 'running', childVisible: true },
-            { desc: 'pthread_join() - Le thread principal attend', mainPos: 80, childPos: 90, childStatus: 'running', childVisible: true },
-            { desc: 'Le thread créé termine avec pthread_exit()', mainPos: 80, childPos: 100, childStatus: 'finished', childVisible: true },
-            { desc: 'Le thread principal reprend après pthread_join()', mainPos: 100, childPos: 100, childStatus: 'finished', childVisible: true }
+            { desc: 'The main thread starts', mainPos: 20, childPos: 0, childStatus: 'idle', childVisible: false },
+            { desc: 'pthread_create() is called', mainPos: 40, childPos: 0, childStatus: 'creating', childVisible: true },
+            { desc: 'The new thread is created and runs in parallel', mainPos: 60, childPos: 30, childStatus: 'running', childVisible: true },
+            { desc: 'Both threads run at the same time', mainPos: 80, childPos: 60, childStatus: 'running', childVisible: true },
+            { desc: 'pthread_join() - The main thread waits', mainPos: 80, childPos: 90, childStatus: 'running', childVisible: true },
+            { desc: 'The created thread ends with pthread_exit()', mainPos: 80, childPos: 100, childStatus: 'finished', childVisible: true },
+            { desc: 'The main thread resumes after pthread_join()', mainPos: 100, childPos: 100, childStatus: 'finished', childVisible: true }
         ];
 
         const semaphoreSteps = [
-            { desc: 'sem_init(&sem, 0, 1) - Sémaphore initialisé à 1', semValue: 1, thread1: 'waiting', thread2: 'waiting', inCritical: null },
-            { desc: 'Thread 1 appelle sem_wait() - Sémaphore décrémenté à 0', semValue: 0, thread1: 'in_critical', thread2: 'waiting', inCritical: 1 },
-            { desc: 'Thread 2 appelle sem_wait() - Bloqué car sémaphore = 0', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
-            { desc: 'Thread 1 dans la section critique', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
-            { desc: 'Thread 1 appelle sem_post() - Sémaphore incrémenté à 1', semValue: 1, thread1: 'finished', thread2: 'blocked', inCritical: null },
-            { desc: 'Thread 2 est débloqué et entre en section critique', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
-            { desc: 'Thread 2 appelle sem_post() - Libère le sémaphore', semValue: 1, thread1: 'finished', thread2: 'finished', inCritical: null }
+            { desc: 'sem_init(&sem, 0, 1) - Semaphore initialized to 1', semValue: 1, thread1: 'waiting', thread2: 'waiting', inCritical: null },
+            { desc: 'Thread 1 calls sem_wait() - Semaphore decremented to 0', semValue: 0, thread1: 'in_critical', thread2: 'waiting', inCritical: 1 },
+            { desc: 'Thread 2 calls sem_wait() - Blocked because semaphore = 0', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 is in the critical section', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 calls sem_post() - Semaphore incremented to 1', semValue: 1, thread1: 'finished', thread2: 'blocked', inCritical: null },
+            { desc: 'Thread 2 is unblocked and enters the critical section', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
+            { desc: 'Thread 2 calls sem_post() - Releases the semaphore', semValue: 1, thread1: 'finished', thread2: 'finished', inCritical: null }
         ];
 
         function switchTab(tab) {
@@ -505,31 +505,31 @@
             if (tab === 'threads') {
                 legendContent.innerHTML = `
                     <div class="legend-item">
-                        <strong style="color: #60a5fa;">pthread_create() :</strong> Crée un nouveau thread qui s'exécute en parallèle
+                        <strong style="color: #60a5fa;">pthread_create():</strong> Creates a new thread that runs in parallel
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #4ade80;">pthread_join() :</strong> Attend la fin d'un thread (comme wait() pour les processus)
+                        <strong style="color: #4ade80;">pthread_join():</strong> Waits for a thread to finish (like wait() for processes)
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #fbbf24;">Mémoire partagée :</strong> Heap commun entre threads
+                        <strong style="color: #fbbf24;">Shared memory:</strong> Threads share the same heap
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #c084fc;">pthread_exit() :</strong> Termine un thread proprement
+                        <strong style="color: #c084fc;">pthread_exit():</strong> Ends a thread cleanly
                     </div>
                 `;
             } else {
                 legendContent.innerHTML = `
                     <div class="legend-item">
-                        <strong style="color: #4ade80;">sem_wait() (P) :</strong> Décrémente le sémaphore, bloque si = 0
+                        <strong style="color: #4ade80;">sem_wait() (P):</strong> Decrements the semaphore, blocks if it is 0
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #60a5fa;">sem_post() (V) :</strong> Incrémente le sémaphore, débloque un thread
+                        <strong style="color: #60a5fa;">sem_post() (V):</strong> Increments the semaphore, unblocks a thread
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #fbbf24;">Section critique :</strong> Zone où un seul thread peut accéder à la fois
+                        <strong style="color: #fbbf24;">Critical section:</strong> Code that only one thread can run at a time
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #ef4444;">Exclusion mutuelle :</strong> sem_init(&sem, 0, 1) pour protéger les ressources
+                        <strong style="color: #ef4444;">Mutual exclusion:</strong> sem_init(&sem, 0, 1) protects a resource
                     </div>
                 `;
             }
@@ -560,16 +560,16 @@
                 
                 if (step.childStatus === 'running') {
                     childStatus.classList.add('status-running');
-                    childStatus.textContent = 'En cours';
+                    childStatus.textContent = 'Running';
                 } else if (step.childStatus === 'creating') {
                     childStatus.classList.add('status-creating');
-                    childStatus.textContent = 'Création...';
+                    childStatus.textContent = 'Creating...';
                 } else if (step.childStatus === 'finished') {
                     childStatus.classList.add('status-finished');
-                    childStatus.textContent = 'Terminé';
+                    childStatus.textContent = 'Finished';
                 } else {
                     childStatus.classList.add('status-idle');
-                    childStatus.textContent = 'Inactif';
+                    childStatus.textContent = 'Idle';
                 }
             } else {
                 const step = semaphoreSteps[currentStep];
@@ -578,13 +578,13 @@
                 const semCircle = document.getElementById('semaphore-circle');
                 semCircle.textContent = step.semValue;
                 semCircle.className = 'semaphore-circle ' + (step.semValue > 0 ? 'semaphore-available' : 'semaphore-locked');
-                document.getElementById('semaphore-label').textContent = step.semValue > 0 ? 'Disponible' : 'Verrouillé';
+                document.getElementById('semaphore-label').textContent = step.semValue > 0 ? 'Available' : 'Locked';
                 
                 const criticalContent = document.getElementById('critical-content');
                 if (step.inCritical) {
-                    criticalContent.innerHTML = `<div class="thread-in-critical" style="background: ${step.inCritical === 1 ? '#3b82f6' : '#a855f7'};">Thread ${step.inCritical} à l'intérieur</div>`;
+                    criticalContent.innerHTML = `<div class="thread-in-critical" style="background: ${step.inCritical === 1 ? '#3b82f6' : '#a855f7'};">Thread ${step.inCritical} inside</div>`;
                 } else {
-                    criticalContent.innerHTML = '<div style="text-align: center; color: #94a3b8; font-style: italic;">Aucun thread en accès</div>';
+                    criticalContent.innerHTML = '<div style="text-align: center; color: #94a3b8; font-style: italic;">No thread inside</div>';
                 }
                 
                 updateThreadCard('thread1', step.thread1);
@@ -599,10 +599,10 @@
             card.className = 'thread-card ' + status;
             
             const statusLabels = {
-                'waiting': 'En attente',
-                'blocked': 'Bloqué (wait)',
-                'in_critical': 'En section critique',
-                'finished': 'Terminé'
+                'waiting': 'Waiting',
+                'blocked': 'Blocked (wait)',
+                'in_critical': 'In critical section',
+                'finished': 'Finished'
             };
             
             const statusColors = {
@@ -619,7 +619,7 @@
         function togglePlay() {
             isPlaying = !isPlaying;
             document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
-            document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Lecture';
+            document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Play';
             
             if (isPlaying) {
                 playInterval = setInterval(() => {
@@ -647,7 +647,7 @@
             isPlaying = false;
             clearInterval(playInterval);
             document.getElementById('play-icon').textContent = '▶';
-            document.getElementById('play-text').textContent = 'Lecture';
+            document.getElementById('play-text').textContent = 'Play';
             updateDisplay();
         }
 
