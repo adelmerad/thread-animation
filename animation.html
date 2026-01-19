@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation : Threads et Sémaphores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+        }
+
+        .tab-button:not(.active) {
+            background: #334155;
+            color: #94a3b8;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #475569;
+        }
+
+        .animation-area {
+            background: #1e293b;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #334155;
+            min-height: 400px;
+        }
+
+        .thread-container {
+            margin-bottom: 2rem;
+        }
+
+        .thread-label {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .thread-name {
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .thread-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .status-running { background: #10b981; }
+        .status-idle { background: #64748b; }
+        .status-creating { background: #f59e0b; }
+        .status-finished { background: #6b7280; }
+
+        .progress-bar {
+            position: relative;
+            height: 3rem;
+            background: #334155;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            height: 100%;
+            transition: width 1s ease-in-out;
+        }
+
+        .progress-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 2rem;
+            height: 2rem;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: left 1s ease-in-out;
+        }
+
+        .progress-indicator-dot {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .memory-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #334155;
+            border-radius: 0.5rem;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .memory-block {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid;
+        }
+
+        .heap-block {
+            background: rgba(217, 119, 6, 0.2);
+            border-color: #d97706;
+            color: #fbbf24;
+        }
+
+        .stack-block {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            border: 2px solid;
+        }
+
+        .stack-1 { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd; }
+        .stack-2 { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #86efac; }
+
+        .semaphore-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .semaphore-circle {
+            width: 8rem;
+            height: 8rem;
+            margin: 1rem auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            border: 4px solid;
+            transition: all 0.5s;
+        }
+
+        .semaphore-available {
+            background: #10b981;
+            border-color: #34d399;
+        }
+
+        .semaphore-locked {
+            background: #ef4444;
+            border-color: #f87171;
+        }
+
+        .critical-section {
+            background: rgba(234, 179, 8, 0.2);
+            border: 2px solid #eab308;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            min-height: 8rem;
+            margin-bottom: 2rem;
+        }
+
+        .critical-section h3 {
+            color: #fbbf24;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .thread-in-critical {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .thread-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .thread-card {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid;
+            transition: all 0.3s;
+        }
+
+        .thread-card.waiting { background: #334155; border-color: #64748b; }
+        .thread-card.blocked { background: #7f1d1d; border-color: #ef4444; }
+        .thread-card.in-critical { background: #1e3a8a; border-color: #3b82f6; transform: scale(1.05); }
+        .thread-card.finished { background: #1f2937; border-color: #6b7280; }
+
+        .description-box {
+            background: #334155;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #475569;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: #6366f1;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .control-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-button.primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .control-button.secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .control-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .legend {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+        }
+
+        .legend h3 {
+            margin-bottom: 1rem;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .legend-item {
+            color: #cbd5e1;
+        }
+
+        .legend-item strong {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Visualisation : Threads et Sémaphores</h1>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('threads')">Threads (pthread)</button>
+            <button class="tab-button" onclick="switchTab('semaphores')">Sémaphores (sem)</button>
+        </div>
+
+        <div class="animation-area">
+            <!-- THREADS TAB -->
+            <div id="threads-content">
+                <div class="thread-container">
+                    <div class="thread-label">
+                        <span class="thread-name">Thread Principal</span>
+                        <span class="thread-status status-running" id="main-status">En cours</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="background: #3b82f6; width: 0%;" id="main-progress"></div>
+                        <div class="progress-indicator" style="left: 0%;" id="main-indicator">
+                            <div class="progress-indicator-dot" style="background: #3b82f6;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thread-container">
+                    <div class="thread-label">
+                        <span class="thread-name">Thread Créé</span>
+                        <span class="thread-status status-idle" id="child-status">Inactif</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="background: #22c55e; width: 0%;" id="child-progress"></div>
+                        <div class="progress-indicator hidden" style="left: 0%;" id="child-indicator">
+                            <div class="progress-indicator-dot" style="background: #22c55e;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="memory-section">
+                    <h3>Mémoire Partagée</h3>
+                    <div class="memory-grid">
+                        <div class="memory-block heap-block">
+                            <div style="font-weight: bold; margin-bottom: 0.5rem;">Heap (partagé)</div>
+                            <div style="font-size: 0.875rem;">Variables globales</div>
+                        </div>
+                        <div>
+                            <div class="stack-block stack-1" style="margin-bottom: 0.5rem;">Stack Thread 1</div>
+                            <div class="stack-block stack-2">Stack Thread 2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEMAPHORES TAB -->
+            <div id="semaphores-content" class="hidden">
+                <div class="semaphore-display">
+                    <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">Sémaphore</div>
+                    <div class="semaphore-circle semaphore-available" id="semaphore-circle">1</div>
+                    <div style="color: #94a3b8;" id="semaphore-label">Disponible</div>
+                </div>
+
+                <div class="critical-section">
+                    <h3>Section Critique (Ressource Partagée)</h3>
+                    <div id="critical-content" style="text-align: center; color: #94a3b8; font-style: italic;">
+                        Aucun thread en accès
+                    </div>
+                </div>
+
+                <div class="thread-grid">
+                    <div class="thread-card waiting" id="thread1-card">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 1</div>
+                        <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread1-label">
+                            En attente
+                        </div>
+                    </div>
+                    <div class="thread-card waiting" id="thread2-card">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">Thread 2</div>
+                        <div style="font-size: 0.875rem; padding: 0.5rem; background: #475569; border-radius: 0.25rem; display: inline-block;" id="thread2-label">
+                            En attente
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="description-box">
+            <span class="step-number" id="step-number">1</span>
+            <span id="step-description">Le thread principal démarre</span>
+        </div>
+
+        <div class="controls">
+            <button class="control-button primary" onclick="togglePlay()">
+                <span id="play-icon">▶</span>
+                <span id="play-text">Lecture</span>
+            </button>
+            <button class="control-button secondary" onclick="nextStep()">
+                <span>▶▶</span>
+                <span>Suivant</span>
+            </button>
+            <button class="control-button secondary" onclick="reset()">
+                <span>↻</span>
+                <span>Recommencer</span>
+            </button>
+        </div>
+
+        <div class="legend">
+            <h3>Concepts clés :</h3>
+            <div class="legend-grid" id="legend-content">
+                <div class="legend-item">
+                    <strong style="color: #60a5fa;">pthread_create() :</strong> Crée un nouveau thread qui s'exécute en parallèle
+                </div>
+                <div class="legend-item">
+                    <strong style="color: #4ade80;">pthread_join() :</strong> Attend la fin d'un thread (comme wait() pour les processus)
+                </div>
+                <div class="legend-item">
+                    <strong style="color: #fbbf24;">Mémoire partagée :</strong> Heap commun entre threads
+                </div>
+                <div class="legend-item">
+                    <strong style="color: #c084fc;">pthread_exit() :</strong> Termine un thread proprement
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'threads';
+        let currentStep = 0;
+        let isPlaying = false;
+        let playInterval = null;
+
+        const threadSteps = [
+            { desc: 'Le thread principal démarre', mainPos: 20, childPos: 0, childStatus: 'idle', childVisible: false },
+            { desc: 'pthread_create() est appelé', mainPos: 40, childPos: 0, childStatus: 'creating', childVisible: true },
+            { desc: 'Le nouveau thread est créé et s\'exécute en parallèle', mainPos: 60, childPos: 30, childStatus: 'running', childVisible: true },
+            { desc: 'Les deux threads s\'exécutent simultanément', mainPos: 80, childPos: 60, childStatus: 'running', childVisible: true },
+            { desc: 'pthread_join() - Le thread principal attend', mainPos: 80, childPos: 90, childStatus: 'running', childVisible: true },
+            { desc: 'Le thread créé termine avec pthread_exit()', mainPos: 80, childPos: 100, childStatus: 'finished', childVisible: true },
+            { desc: 'Le thread principal reprend après pthread_join()', mainPos: 100, childPos: 100, childStatus: 'finished', childVisible: true }
+        ];
+
+        const semaphoreSteps = [
+            { desc: 'sem_init(&sem, 0, 1) - Sémaphore initialisé à 1', semValue: 1, thread1: 'waiting', thread2: 'waiting', inCritical: null },
+            { desc: 'Thread 1 appelle sem_wait() - Sémaphore décrémenté à 0', semValue: 0, thread1: 'in_critical', thread2: 'waiting', inCritical: 1 },
+            { desc: 'Thread 2 appelle sem_wait() - Bloqué car sémaphore = 0', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 dans la section critique', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
+            { desc: 'Thread 1 appelle sem_post() - Sémaphore incrémenté à 1', semValue: 1, thread1: 'finished', thread2: 'blocked', inCritical: null },
+            { desc: 'Thread 2 est débloqué et entre en section critique', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
+            { desc: 'Thread 2 appelle sem_post() - Libère le sémaphore', semValue: 1, thread1: 'finished', thread2: 'finished', inCritical: null }
+        ];
+
+        function switchTab(tab) {
+            currentTab = tab;
+            reset();
+            
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'threads') {
+                document.getElementById('threads-content').classList.remove('hidden');
+                document.getElementById('semaphores-content').classList.add('hidden');
+                updateLegend('threads');
+            } else {
+                document.getElementById('threads-content').classList.add('hidden');
+                document.getElementById('semaphores-content').classList.remove('hidden');
+                updateLegend('semaphores');
+            }
+        }
+
+        function updateLegend(tab) {
+            const legendContent = document.getElementById('legend-content');
+            if (tab === 'threads') {
+                legendContent.innerHTML = `
+                    <div class="legend-item">
+                        <strong style="color: #60a5fa;">pthread_create() :</strong> Crée un nouveau thread qui s'exécute en parallèle
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #4ade80;">pthread_join() :</strong> Attend la fin d'un thread (comme wait() pour les processus)
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #fbbf24;">Mémoire partagée :</strong> Heap commun entre threads
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #c084fc;">pthread_exit() :</strong> Termine un thread proprement
+                    </div>
+                `;
+            } else {
+                legendContent.innerHTML = `
+                    <div class="legend-item">
+                        <strong style="color: #4ade80;">sem_wait() (P) :</strong> Décrémente le sémaphore, bloque si = 0
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #60a5fa;">sem_post() (V) :</strong> Incrémente le sémaphore, débloque un thread
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #fbbf24;">Section critique :</strong> Zone où un seul thread peut accéder à la fois
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #ef4444;">Exclusion mutuelle :</strong> sem_init(&sem, 0, 1) pour protéger les ressources
+                    </div>
+                `;
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('step-number').textContent = currentStep + 1;
+            
+            if (currentTab === 'threads') {
+                const step = threadSteps[currentStep];
+                document.getElementById('step-description').textContent = step.desc;
+                
+                document.getElementById('main-progress').style.width = step.mainPos + '%';
+                document.getElementById('main-indicator').style.left = step.mainPos + '%';
+                
+                document.getElementById('child-progress').style.width = step.childPos + '%';
+                document.getElementById('child-indicator').style.left = step.childPos + '%';
+                
+                const childIndicator = document.getElementById('child-indicator');
+                if (step.childVisible) {
+                    childIndicator.classList.remove('hidden');
+                } else {
+                    childIndicator.classList.add('hidden');
+                }
+                
+                const childStatus = document.getElementById('child-status');
+                childStatus.className = 'thread-status';
+                
+                if (step.childStatus === 'running') {
+                    childStatus.classList.add('status-running');
+                    childStatus.textContent = 'En cours';
+                } else if (step.childStatus === 'creating') {
+                    childStatus.classList.add('status-creating');
+                    childStatus.textContent = 'Création...';
+                } else if (step.childStatus === 'finished') {
+                    childStatus.classList.add('status-finished');
+                    childStatus.textContent = 'Terminé';
+                } else {
+                    childStatus.classList.add('status-idle');
+                    childStatus.textContent = 'Inactif';
+                }
+            } else {
+                const step = semaphoreSteps[currentStep];
+                document.getElementById('step-description').textContent = step.desc;
+                
+                const semCircle = document.getElementById('semaphore-circle');
+                semCircle.textContent = step.semValue;
+                semCircle.className = 'semaphore-circle ' + (step.semValue > 0 ? 'semaphore-available' : 'semaphore-locked');
+                document.getElementById('semaphore-label').textContent = step.semValue > 0 ? 'Disponible' : 'Verrouillé';
+                
+                const criticalContent = document.getElementById('critical-content');
+                if (step.inCritical) {
+                    criticalContent.innerHTML = `<div class="thread-in-critical" style="background: ${step.inCritical === 1 ? '#3b82f6' : '#a855f7'};">Thread ${step.inCritical} à l'intérieur</div>`;
+                } else {
+                    criticalContent.innerHTML = '<div style="text-align: center; color: #94a3b8; font-style: italic;">Aucun thread en accès</div>';
+                }
+                
+                updateThreadCard('thread1', step.thread1);
+                updateThreadCard('thread2', step.thread2);
+            }
+        }
+
+        function updateThreadCard(threadId, status) {
+            const card = document.getElementById(threadId + '-card');
+            const label = document.getElementById(threadId + '-label');
+            
+            card.className = 'thread-card ' + status;
+            
+            const statusLabels = {
+                'waiting': 'En attente',
+                'blocked': 'Bloqué (wait)',
+                'in_critical': 'En section critique',
+                'finished': 'Terminé'
+            };
+            
+            const statusColors = {
+                'waiting': '#475569',
+                'blocked': '#ef4444',
+                'in_critical': threadId === 'thread1' ? '#3b82f6' : '#a855f7',
+                'finished': '#6b7280'
+            };
+            
+            label.textContent = statusLabels[status];
+            label.style.background = statusColors[status];
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
+            document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Lecture';
+            
+            if (isPlaying) {
+                playInterval = setInterval(() => {
+                    nextStep();
+                    const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
+                    if (currentStep >= maxSteps - 1) {
+                        togglePlay();
+                    }
+                }, 2000);
+            } else {
+                clearInterval(playInterval);
+            }
+        }
+
+        function nextStep() {
+            const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
+            if (currentStep < maxSteps - 1) {
+                currentStep++;
+                updateDisplay();
+            }
+        }
+
+        function reset() {
+            currentStep = 0;
+            isPlaying = false;
+            clearInterval(playInterval);
+            document.getElementById('play-icon').textContent = '▶';
+            document.getElementById('play-text').textContent = 'Lecture';
+            updateDisplay();
+        }
+
+        // Initialize
+        updateDisplay();
+        updateLegend('threads');
+    </script>
+</body>
+</html>
