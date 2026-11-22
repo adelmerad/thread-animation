@@ -12,6 +12,7 @@ An interactive, step-by-step animation of POSIX threads and semaphores, followed
 
 - **Threads tab:** follow `pthread_create()`, `pthread_join()` and `pthread_exit()` on two timelines, with the shared heap and separate stacks
 - **Semaphores tab:** watch two threads compete for a critical section, with the semaphore value, blocked states and unblocking
+- **Race condition tab:** see why the lock is needed: two threads run `counter++` (load, add, store) and one update is lost
 - Play, pause, step forward and restart
 - A single HTML file with no dependencies: open `index.html` in a browser
 
@@ -203,6 +204,47 @@ int main() {
 
 ---
 
+## 🐞 Seeing the Race for Yourself
+
+The animation shows the fix. This program shows the bug: two threads add 1 to the same counter one million times each, so the result should be 2,000,000.
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+
+#define N 1000000
+long counter = 0;
+
+void* work(void* arg) {
+    for (int i = 0; i < N; i++)
+        counter++;              // load, add, store: not atomic
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+    pthread_create(&t1, NULL, work, NULL);
+    pthread_create(&t2, NULL, work, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    printf("counter = %ld (expected %d)\n", counter, 2 * N);
+    return 0;
+}
+```
+
+Five runs on my laptop (gcc -O0, 2 threads):
+
+| Version | Result | Time |
+|---------|--------|------|
+| No lock | 1,138,389 to 1,823,311 (different every run) | ~55 ms |
+| `sem_wait`/`sem_post` around `counter++` | 2,000,000 | ~5.9 s |
+| `atomic_fetch_add` (`<stdatomic.h>`) | 2,000,000 | ~65 ms |
+| Each thread counts locally, then adds once under the semaphore | 2,000,000 | ~50 ms |
+
+Locking fixes the result, but taking the lock two million times made the program about 100 times slower. Lock as little as possible: keep work local and share only the final result.
+
+---
+
 ## 📊 Key Differences
 
 | Concept | Threads | Semaphores |
@@ -217,7 +259,7 @@ int main() {
 ## ⚠️ Important Points
 
 ### For threads
-- ✅ Always use `pthread_join()` to avoid memory leaks
+- ✅ Call `pthread_join()` (or `pthread_detach()` if you never need the result): otherwise the thread's resources are not freed
 - ✅ Threads share memory (watch out for conflicts!)
 - ✅ Compile with `-pthread`
 
@@ -226,6 +268,8 @@ int main() {
 - ✅ Always call `sem_post()` when you're done
 - ✅ Initialize with `sem_init()` BEFORE use
 - ✅ Destroy with `sem_destroy()` at the end
+- ✅ After `sem_post()`, which waiting thread continues first is not guaranteed
+- ✅ For a simple lock, a `pthread_mutex_t` is the usual choice: only the thread that locked it can unlock it. A semaphore can be posted by any thread, which makes it useful for signalling between threads
 
 ---
 
@@ -246,7 +290,10 @@ int main() {
 ## ❓ FAQ
 
 **Q: Why won't my code compile on Windows?**  
-A: POSIX threads work on Linux and Unix. On Windows, use WSL.
+A: POSIX threads are a Linux/Unix API. On Windows, use WSL, or a MinGW-w64 gcc with POSIX threads (e.g. the one shipped with Code::Blocks): the examples above compile with `-pthread`.
+
+**Q: Does it work on macOS?**  
+A: Threads yes, but unnamed semaphores no: `sem_init()` is not supported on macOS and returns an error. Use `sem_open()` (named semaphores) or `dispatch_semaphore_t` instead.
 
 **Q: What happens if I forget `pthread_join()`?**  
 A: The program can exit before the thread finishes, which causes bugs.
