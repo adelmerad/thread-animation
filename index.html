@@ -245,6 +245,7 @@
         .thread-card.blocked { background: #7f1d1d; border-color: #ef4444; }
         .thread-card.in-critical { background: #1e3a8a; border-color: #3b82f6; transform: scale(1.05); }
         .thread-card.finished { background: #1f2937; border-color: #6b7280; }
+        .thread-card.running { background: #1e3a8a; border-color: #3b82f6; }
 
         .description-box {
             background: #334155;
@@ -330,6 +331,69 @@
         .hidden {
             display: none;
         }
+
+        /* Race condition tab */
+        .race-memory {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .race-counter {
+            display: inline-block;
+            min-width: 7rem;
+            padding: 1rem 1.5rem;
+            margin-top: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            background: rgba(234, 179, 8, 0.2);
+            border: 2px solid #eab308;
+            transition: all 0.3s;
+        }
+
+        .race-counter.lost {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: #ef4444;
+        }
+
+        .race-code {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
+        }
+
+        .race-code div {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #94a3b8;
+        }
+
+        .race-code div.current {
+            background: #6366f1;
+            color: white;
+        }
+
+        .race-register {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .race-register b {
+            font-family: ui-monospace, Consolas, monospace;
+        }
+
+        .race-note {
+            margin-top: 1.5rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .tabs { flex-wrap: wrap; }
+            .race-code { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -337,8 +401,9 @@
         <h1>Threads and Semaphores Visualizer</h1>
 
         <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('threads')">Threads (pthread)</button>
-            <button class="tab-button" onclick="switchTab('semaphores')">Semaphores (sem)</button>
+            <button class="tab-button active" onclick="switchTab('threads', this)">Threads (pthread)</button>
+            <button class="tab-button" onclick="switchTab('semaphores', this)">Semaphores (sem)</button>
+            <button class="tab-button" onclick="switchTab('race', this)">Race condition</button>
         </div>
 
         <div class="animation-area">
@@ -415,11 +480,42 @@
                     </div>
                 </div>
             </div>
+
+            <!-- RACE CONDITION TAB -->
+            <div id="race-content" class="hidden">
+                <div class="race-memory">
+                    <div style="font-size: 1.25rem; font-weight: bold;">Shared variable</div>
+                    <div class="race-counter" id="race-counter">counter = 5</div>
+                </div>
+
+                <div class="thread-grid">
+                    <div class="thread-card waiting" id="race1-card">
+                        <div style="font-weight: bold;">Thread 1: counter++</div>
+                        <div class="race-code" id="race1-code">
+                            <div>load  counter → reg</div>
+                            <div>add   reg, 1</div>
+                            <div>store reg → counter</div>
+                        </div>
+                        <div class="race-register">register: <b id="race1-reg">–</b></div>
+                    </div>
+                    <div class="thread-card waiting" id="race2-card">
+                        <div style="font-weight: bold;">Thread 2: counter++</div>
+                        <div class="race-code" id="race2-code">
+                            <div>load  counter → reg</div>
+                            <div>add   reg, 1</div>
+                            <div>store reg → counter</div>
+                        </div>
+                        <div class="race-register">register: <b id="race2-reg">–</b></div>
+                    </div>
+                </div>
+
+                <p class="race-note">counter++ looks like one operation, but the processor does it in three steps. Each thread has its own register.</p>
+            </div>
         </div>
 
         <div class="description-box">
             <span class="step-number" id="step-number">1</span>
-            <span id="step-description">The main thread starts</span>
+            <span id="step-description" aria-live="polite">The main thread starts</span>
         </div>
 
         <div class="controls">
@@ -478,26 +574,40 @@
             { desc: 'Thread 2 calls sem_wait() - Blocked because semaphore = 0', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
             { desc: 'Thread 1 is in the critical section', semValue: 0, thread1: 'in_critical', thread2: 'blocked', inCritical: 1 },
             { desc: 'Thread 1 calls sem_post() - Semaphore incremented to 1', semValue: 1, thread1: 'finished', thread2: 'blocked', inCritical: null },
-            { desc: 'Thread 2 is unblocked and enters the critical section', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
+            { desc: 'Thread 2 is woken up, decrements the semaphore to 0 and enters the critical section', semValue: 0, thread1: 'finished', thread2: 'in_critical', inCritical: 2 },
             { desc: 'Thread 2 calls sem_post() - Releases the semaphore', semValue: 1, thread1: 'finished', thread2: 'finished', inCritical: null }
         ];
 
-        function switchTab(tab) {
+        // Two threads run counter++ without a lock. The interleaving below loses one update.
+        // line: index of the instruction being run (-1 = none), reg: the thread's register
+        const raceSteps = [
+            { desc: 'counter = 5. Two threads will each run counter++ once, so we expect 7', counter: 5, t1: { line: -1, reg: null }, t2: { line: -1, reg: null }, lost: false },
+            { desc: 'Thread 1 loads counter into its register: 5', counter: 5, t1: { line: 0, reg: 5 }, t2: { line: -1, reg: null }, lost: false },
+            { desc: 'Thread 2 loads counter too. Thread 1 has not written yet, so it also reads 5', counter: 5, t1: { line: 0, reg: 5 }, t2: { line: 0, reg: 5 }, lost: false },
+            { desc: 'Thread 1 adds 1 to its register: 6', counter: 5, t1: { line: 1, reg: 6 }, t2: { line: 0, reg: 5 }, lost: false },
+            { desc: 'Thread 2 adds 1 to its register: 6', counter: 5, t1: { line: 1, reg: 6 }, t2: { line: 1, reg: 6 }, lost: false },
+            { desc: 'Thread 1 stores 6 into counter', counter: 6, t1: { line: 2, reg: 6 }, t2: { line: 1, reg: 6 }, lost: false },
+            { desc: 'Thread 2 stores its 6 too, on top of Thread 1’s result. Two increments, but counter is 6, not 7: one update is lost', counter: 6, t1: { line: -1, reg: 6 }, t2: { line: 2, reg: 6 }, lost: true },
+            { desc: 'The fix: put sem_wait() before counter++ and sem_post() after. Thread 2 then waits at step 3 and loads 6, not 5', counter: 6, t1: { line: -1, reg: 6 }, t2: { line: -1, reg: 6 }, lost: true }
+        ];
+
+        function stepsFor(tab) {
+            if (tab === 'threads') return threadSteps;
+            if (tab === 'semaphores') return semaphoreSteps;
+            return raceSteps;
+        }
+
+        function switchTab(tab, button) {
             currentTab = tab;
             reset();
-            
+
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if (tab === 'threads') {
-                document.getElementById('threads-content').classList.remove('hidden');
-                document.getElementById('semaphores-content').classList.add('hidden');
-                updateLegend('threads');
-            } else {
-                document.getElementById('threads-content').classList.add('hidden');
-                document.getElementById('semaphores-content').classList.remove('hidden');
-                updateLegend('semaphores');
-            }
+            button.classList.add('active');
+
+            ['threads', 'semaphores', 'race'].forEach(name => {
+                document.getElementById(name + '-content').classList.toggle('hidden', name !== tab);
+            });
+            updateLegend(tab);
         }
 
         function updateLegend(tab) {
@@ -517,13 +627,28 @@
                         <strong style="color: #c084fc;">pthread_exit():</strong> Ends a thread cleanly
                     </div>
                 `;
+            } else if (tab === 'race') {
+                legendContent.innerHTML = `
+                    <div class="legend-item">
+                        <strong style="color: #f87171;">Race condition:</strong> The result depends on the order in which threads run
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #fbbf24;">Not atomic:</strong> counter++ is load, add, store: another thread can run in between
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #4ade80;">Fix:</strong> sem_wait()/sem_post() or a mutex around counter++, or an atomic increment
+                    </div>
+                    <div class="legend-item">
+                        <strong style="color: #60a5fa;">Why it is hard:</strong> The bug only appears with some interleavings, so a program can work in tests and fail later
+                    </div>
+                `;
             } else {
                 legendContent.innerHTML = `
                     <div class="legend-item">
                         <strong style="color: #4ade80;">sem_wait() (P):</strong> Decrements the semaphore, blocks if it is 0
                     </div>
                     <div class="legend-item">
-                        <strong style="color: #60a5fa;">sem_post() (V):</strong> Increments the semaphore, unblocks a thread
+                        <strong style="color: #60a5fa;">sem_post() (V):</strong> Increments the semaphore and lets one blocked thread continue (which one is not guaranteed)
                     </div>
                     <div class="legend-item">
                         <strong style="color: #fbbf24;">Critical section:</strong> Code that only one thread can run at a time
@@ -537,27 +662,27 @@
 
         function updateDisplay() {
             document.getElementById('step-number').textContent = currentStep + 1;
-            
+
             if (currentTab === 'threads') {
                 const step = threadSteps[currentStep];
                 document.getElementById('step-description').textContent = step.desc;
-                
+
                 document.getElementById('main-progress').style.width = step.mainPos + '%';
                 document.getElementById('main-indicator').style.left = step.mainPos + '%';
-                
+
                 document.getElementById('child-progress').style.width = step.childPos + '%';
                 document.getElementById('child-indicator').style.left = step.childPos + '%';
-                
+
                 const childIndicator = document.getElementById('child-indicator');
                 if (step.childVisible) {
                     childIndicator.classList.remove('hidden');
                 } else {
                     childIndicator.classList.add('hidden');
                 }
-                
+
                 const childStatus = document.getElementById('child-status');
                 childStatus.className = 'thread-status';
-                
+
                 if (step.childStatus === 'running') {
                     childStatus.classList.add('status-running');
                     childStatus.textContent = 'Running';
@@ -571,22 +696,37 @@
                     childStatus.classList.add('status-idle');
                     childStatus.textContent = 'Idle';
                 }
+            } else if (currentTab === 'race') {
+                const step = raceSteps[currentStep];
+                document.getElementById('step-description').textContent = step.desc;
+
+                const counter = document.getElementById('race-counter');
+                counter.textContent = 'counter = ' + step.counter;
+                counter.classList.toggle('lost', step.lost);
+
+                [['race1', step.t1], ['race2', step.t2]].forEach(([id, t]) => {
+                    document.getElementById(id + '-reg').textContent = t.reg === null ? '–' : t.reg;
+                    document.querySelectorAll('#' + id + '-code div').forEach((line, i) => {
+                        line.classList.toggle('current', i === t.line);
+                    });
+                    document.getElementById(id + '-card').className = 'thread-card ' + (t.line >= 0 ? 'running' : 'waiting');
+                });
             } else {
                 const step = semaphoreSteps[currentStep];
                 document.getElementById('step-description').textContent = step.desc;
-                
+
                 const semCircle = document.getElementById('semaphore-circle');
                 semCircle.textContent = step.semValue;
                 semCircle.className = 'semaphore-circle ' + (step.semValue > 0 ? 'semaphore-available' : 'semaphore-locked');
                 document.getElementById('semaphore-label').textContent = step.semValue > 0 ? 'Available' : 'Locked';
-                
+
                 const criticalContent = document.getElementById('critical-content');
                 if (step.inCritical) {
                     criticalContent.innerHTML = `<div class="thread-in-critical" style="background: ${step.inCritical === 1 ? '#3b82f6' : '#a855f7'};">Thread ${step.inCritical} inside</div>`;
                 } else {
                     criticalContent.innerHTML = '<div style="text-align: center; color: #94a3b8; font-style: italic;">No thread inside</div>';
                 }
-                
+
                 updateThreadCard('thread1', step.thread1);
                 updateThreadCard('thread2', step.thread2);
             }
@@ -595,37 +735,41 @@
         function updateThreadCard(threadId, status) {
             const card = document.getElementById(threadId + '-card');
             const label = document.getElementById(threadId + '-label');
-            
-            card.className = 'thread-card ' + status;
-            
+
+            card.className = 'thread-card ' + status.replace('_', '-');
+
             const statusLabels = {
                 'waiting': 'Waiting',
                 'blocked': 'Blocked (wait)',
                 'in_critical': 'In critical section',
                 'finished': 'Finished'
             };
-            
+
             const statusColors = {
                 'waiting': '#475569',
                 'blocked': '#ef4444',
                 'in_critical': threadId === 'thread1' ? '#3b82f6' : '#a855f7',
                 'finished': '#6b7280'
             };
-            
+
             label.textContent = statusLabels[status];
             label.style.background = statusColors[status];
         }
 
         function togglePlay() {
+            // pressing Play on the last step starts again from the beginning
+            if (!isPlaying && currentStep >= stepsFor(currentTab).length - 1) {
+                currentStep = 0;
+                updateDisplay();
+            }
             isPlaying = !isPlaying;
             document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
             document.getElementById('play-text').textContent = isPlaying ? 'Pause' : 'Play';
-            
+
             if (isPlaying) {
                 playInterval = setInterval(() => {
                     nextStep();
-                    const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
-                    if (currentStep >= maxSteps - 1) {
+                    if (currentStep >= stepsFor(currentTab).length - 1) {
                         togglePlay();
                     }
                 }, 2000);
@@ -635,8 +779,7 @@
         }
 
         function nextStep() {
-            const maxSteps = currentTab === 'threads' ? threadSteps.length : semaphoreSteps.length;
-            if (currentStep < maxSteps - 1) {
+            if (currentStep < stepsFor(currentTab).length - 1) {
                 currentStep++;
                 updateDisplay();
             }
